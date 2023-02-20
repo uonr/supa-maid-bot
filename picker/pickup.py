@@ -8,6 +8,7 @@ import json
 import shutil
 from .you_get import you_get
 from .twitter import get_status_id, twitter_get
+from .pixiv import get_pixiv_id, pixiv_get
 from .utils import is2XX
 
 booru_token = os.environ["BOORU_TOKEN"]
@@ -52,10 +53,13 @@ async def pickup(url: str):
     download_path.mkdir(parents=True, exist_ok=True)
     try:
         tweet_id = get_status_id(url)
-        if tweet_id is None:
-            await you_get(download_path, url)
-        else:
+        pixiv_id = get_pixiv_id(url)
+        if tweet_id is not None:
             await twitter_get(download_path, tweet_id)
+        elif pixiv_id is not None:
+            pixiv_get(download_path, pixiv_id)
+        else:
+            await you_get(download_path, url)
         await upload_to_booru(download_path, url)
     finally:
         shutil.rmtree(download_path)
