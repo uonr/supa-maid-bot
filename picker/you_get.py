@@ -1,8 +1,9 @@
 import asyncio
 import logging
+from pathlib import Path
 
 
-async def you_get(download_path: str, url: str):
+async def you_get(download_path: Path, url: str):
     cmd = " ".join(["you-get", "--no-caption", "--output-dir", str(download_path), url])
     print(cmd)
     proc = await asyncio.create_subprocess_shell(

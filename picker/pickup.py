@@ -17,7 +17,7 @@ booru_api_url = os.environ.get("BOORU_API_URL", "https://moe.yuru.me/api")
 tmp = pathlib.Path(os.environ.get("TMP_PATH", "/tmp/supa-maid"))
 
 
-async def upload_to_booru(download_path: str, source: str):
+async def upload_to_booru(download_path: pathlib.Path, source: str):
     headers = {
         "Authorization": f"Token {booru_token}",
         "Accept": "application/json",

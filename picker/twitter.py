@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from pathlib import Path
 from typing import Optional
 from os import path
 import tweepy
@@ -19,7 +20,7 @@ auth = tweepy.OAuth1UserHandler(
 api = tweepy.API(auth)
 
 
-TWEET_PATTERN = re.compile("^https://twitter.com/[\w\d\-_]+/status/(\d+)")
+TWEET_PATTERN = re.compile(r"^https://twitter.com/[\w\d\-_]+/status/(\d+)")
 
 
 def get_status_id(tweet_url: str) -> Optional[str]:
@@ -29,7 +30,7 @@ def get_status_id(tweet_url: str) -> Optional[str]:
     return result.group(1)
 
 
-async def twitter_get(download_path: str, status_id: str):
+async def twitter_get(download_path: Path, status_id: str):
     # https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/tweet
     tweet = api.get_status(status_id)
     async with httpx.AsyncClient() as client:

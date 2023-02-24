@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import re
 import logging
 from typing import Optional
@@ -9,7 +10,7 @@ refresh_token = os.environ["PIXIV_REFRESH_TOKEN"]
 access_token = os.environ["PIXIV_ACCESS_TOKEN"]
 api.set_auth(access_token, refresh_token)
 
-PIXIV_PATTERN = re.compile("^https://www.pixiv.net/artworks/(\d+)")
+PIXIV_PATTERN = re.compile(r"^https://www.pixiv.net/artworks/(\d+)")
 
 
 def get_pixiv_id(url: str) -> Optional[str]:
@@ -29,7 +30,7 @@ def get_url(urls: dict) -> str:
     return urls["medium"]
 
 
-def pixiv_get(download_path: str, pixiv_id: str):
+def pixiv_get(download_path: Path, pixiv_id: str):
     json_result = api.illust_detail(pixiv_id)
     illust = json_result.get("illust", None)
     if illust is None:
@@ -38,8 +39,8 @@ def pixiv_get(download_path: str, pixiv_id: str):
     for image in illust.get("meta_pages", []):
         url = get_url(image["image_urls"])
         logging.info(f"Downloading {url}")
-        api.download(url, path=download_path)
+        api.download(url, path=str(download_path))
     else:
         url = get_url(illust["image_urls"])
         logging.info(f"Downloading {url}")
-        api.download(url, path=download_path)
+        api.download(url, path=str(download_path))
