@@ -30,8 +30,9 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     entities = update.message.entities or update.message.caption_entities or []
     text = update.message.text or update.message.caption or ""
     char_list = list(text)
-    try:
-        for entity in entities:
+    has_error = False
+    for entity in entities:
+        try:
             if entity.type == entity.TEXT_LINK:
                 await pickup(entity.url)
             if entity.type == entity.URL:
@@ -39,19 +40,23 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if url.startswith("https://t.me"):
                     continue
                 await pickup(url.strip())
-    except RuntimeError as e:
-        logging.warn(e)
-        await update.message.reply_text(
-            escape_ansi(str(e)),
-            disable_web_page_preview=True,
-            reply_to_message_id=update.message.id,
-        )
-    else:
+        except RuntimeError as e:
+            has_error = True
+            logging.warn(e)
+            await update.message.reply_text(
+                escape_ansi(str(e)),
+                disable_web_page_preview=True,
+                reply_to_message_id=update.message.id,
+            )
+    if not has_error:
         await update.message.delete()
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="started")
+    chat = update.effective_chat
+    if chat is None:
+        return
+    await context.bot.send_message(chat_id=chat.id, text="started")
 
 
 if __name__ == "__main__":
