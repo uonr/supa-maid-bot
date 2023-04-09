@@ -7,8 +7,7 @@ from pixivpy3 import *
 
 api = AppPixivAPI()
 refresh_token = os.environ["PIXIV_REFRESH_TOKEN"]
-access_token = os.environ["PIXIV_ACCESS_TOKEN"]
-api.set_auth(access_token, refresh_token)
+api.auth(refresh_token=refresh_token)
 
 PIXIV_PATTERN = re.compile(r"^https://www.pixiv.net/artworks/(\d+)")
 
