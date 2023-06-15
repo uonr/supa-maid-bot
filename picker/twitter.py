@@ -34,6 +34,8 @@ async def twitter_get(download_path: Path, status_id: str):
     # https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/tweet
     tweet = api.get_status(status_id)
     async with httpx.AsyncClient() as client:
+        if not hasattr(tweet, "extended_entities"):
+            raise RuntimeError('No "extended_entities" in tweet')
         for media in tweet.extended_entities.get("media", []):
             url = media.get("media_url_https", None)
             if url is None:
