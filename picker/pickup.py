@@ -6,6 +6,7 @@ import httpx
 import uuid
 import json
 import shutil
+import tempfile
 from .you_get import you_get
 from .twitter import get_status_id, twitter_get
 from .pixiv import get_pixiv_id, pixiv_get
@@ -14,7 +15,7 @@ from .utils import is2XX
 booru_token = os.environ["BOORU_TOKEN"]
 booru_api_url = os.environ.get("BOORU_API_URL", "https://moe.yuru.me/api")
 
-tmp = pathlib.Path(os.environ.get("TMP_PATH", "/tmp/supa-maid"))
+tmp = pathlib.Path(tempfile.mkdtemp())
 
 
 async def upload_to_booru(download_path: pathlib.Path, source: str):
