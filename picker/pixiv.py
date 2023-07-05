@@ -7,7 +7,6 @@ from pixivpy3 import *
 
 api = AppPixivAPI()
 refresh_token = os.environ["PIXIV_REFRESH_TOKEN"]
-api.auth(refresh_token=refresh_token)
 
 PIXIV_PATTERN = re.compile(r"^https://www.pixiv.net/artworks/(\d+)")
 
@@ -30,6 +29,7 @@ def get_url(urls: dict) -> str:
 
 
 def pixiv_get(download_path: Path, pixiv_id: str):
+    api.auth(refresh_token=refresh_token)
     json_result = api.illust_detail(pixiv_id)
     illust = json_result.get("illust", None)
     if illust is None:
