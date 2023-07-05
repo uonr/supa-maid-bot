@@ -30,26 +30,44 @@ def get_status_id(tweet_url: str) -> Optional[str]:
     return result.group(1)
 
 
+def content_type_is_video(variant):
+    return variant.get("content_type", "").startswith("video/")
+
+
 async def twitter_get(download_path: Path, status_id: str):
     # https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/tweet
     tweet = api.get_status(status_id)
     async with httpx.AsyncClient() as client:
         if not hasattr(tweet, "extended_entities"):
+            print(tweet)
             raise RuntimeError('No "extended_entities" in tweet')
-        for media in tweet.extended_entities.get("media", []):
-            url = None
-            if media.get("type", None) == "animated_gif":
-                variants = media.get("video_info", {}).get("variants", [])
-                assert isinstance(variants, list)
-                if len(variants) == 0:
-                    raise RuntimeError("Failed retrieving video")
-                url = variants[0].get("url", None)
-                if url is None:
-                    raise RuntimeError('No "url" in variants')
-            else:
-                url = media.get("media_url_https", None)
+
+        def is_video(media):
+            media_type = media.get("type", None)
+            return media_type == "video" or media_type == "animated_gif"
+
+        url_list = []
+        for media in filter(is_video, tweet.extended_entities.get("media", [])):
+            variants = media.get("video_info", {}).get("variants", [])
+            assert isinstance(variants, list)
+            if len(variants) == 0:
+                raise RuntimeError("Failed retrieving video")
+            variants = list(filter(content_type_is_video, variants))
+            variants.sort(key=lambda x: x.get("bitrate", 0))
+            url = variants[-1].get("url", None)
             if url is None:
-                continue
+                print(variants)
+                raise RuntimeError('No "url" in variants')
+            url_list.append(url)
+
+        if len(url_list) == 0:
+            for media in tweet.extended_entities.get("media", []):
+                url = media.get("media_url_https", None)
+                if url is None:
+                    continue
+                url_list.append(url)
+
+        for url in url_list:
             response = await client.get(url)
             filename = url.split("/")[-1]
             with open(path.join(download_path, filename), "wb") as f:
