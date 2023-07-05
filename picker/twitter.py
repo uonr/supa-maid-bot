@@ -37,7 +37,17 @@ async def twitter_get(download_path: Path, status_id: str):
         if not hasattr(tweet, "extended_entities"):
             raise RuntimeError('No "extended_entities" in tweet')
         for media in tweet.extended_entities.get("media", []):
-            url = media.get("media_url_https", None)
+            url = None
+            if media.get("type", None) == "animated_gif":
+                variants = media.get("video_info", {}).get("variants", [])
+                assert isinstance(variants, list)
+                if len(variants) == 0:
+                    raise RuntimeError("Failed retrieving video")
+                url = variants[0].get("url", None)
+                if url is None:
+                    raise RuntimeError('No "url" in variants')
+            else:
+                url = media.get("media_url_https", None)
             if url is None:
                 continue
             response = await client.get(url)
