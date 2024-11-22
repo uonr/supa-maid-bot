@@ -37,7 +37,7 @@
           ]);
       in with pkgs; {
         devShells.default = mkShell {
-          buildInputs = [ python you-get ];
+          buildInputs = [ python you-get yt-dlp gallery-dl ];
           nativeBuildInputs = [ pkgs.pkg-config ];
           PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
           shellHook = ''

@@ -1,5 +1,6 @@
 import logging
 import os
+import asyncio
 from typing import List
 import pathlib
 import httpx
@@ -7,11 +8,10 @@ import uuid
 import json
 import shutil
 import tempfile
-from .you_get import you_get
-from .twitter import get_status_id, twitter_get
-from .pixiv import get_pixiv_id, pixiv_get
+import base64
 from .utils import is2XX
 
+booru_username = os.environ["BOORU_USERNAME"]
 booru_token = os.environ["BOORU_TOKEN"]
 booru_api_url = os.environ.get("BOORU_API_URL", "https://moe.yuru.me/api")
 
@@ -19,8 +19,9 @@ tmp = pathlib.Path(tempfile.mkdtemp())
 
 
 async def upload_to_booru(download_path: pathlib.Path, source: str):
+    token = f"{booru_username}:{booru_token}"
     headers = {
-        "Authorization": f"Token {booru_token}",
+        "Authorization": f"Token {base64.b64encode(token.encode()).decode()}",
         "Accept": "application/json",
     }
 
@@ -48,19 +49,25 @@ async def upload_to_booru(download_path: pathlib.Path, source: str):
                 )
 
 
+async def gallery_get(download_path: str, url: str):
+    cmd = " ".join(["gallery-dl", "--directory", download_path, url])
+    print(cmd)
+    proc = await asyncio.create_subprocess_shell(
+        cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+    )
+    stdout, stderr = await proc.communicate()
+    if stdout:
+        logging.info(stdout.decode())
+    if stderr:
+        raise RuntimeError(stderr.decode())
+
+
 async def pickup(url: str):
-    url = url.replace("fxtwitter.", "twitter.").replace("vxtwitter.", "twitter.")
+    url = url.replace("fxtwitter.", "twitter.").replace("vxtwitter.", "twitter.").replace("fixupx.", "x.")
     download_path = tmp.joinpath(str(uuid.uuid4()))
     download_path.mkdir(parents=True, exist_ok=True)
     try:
-        tweet_id = get_status_id(url)
-        pixiv_id = get_pixiv_id(url)
-        if tweet_id is not None:
-            await twitter_get(download_path, tweet_id)
-        elif pixiv_id is not None:
-            pixiv_get(download_path, pixiv_id)
-        else:
-            await you_get(download_path, url)
+        await gallery_get(str(download_path), url)
         await upload_to_booru(download_path, url)
     finally:
         shutil.rmtree(download_path)

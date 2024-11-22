@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import logging
-from telegram import Update
+from telegram import Update, Message
 from telegram.ext import (
     ApplicationBuilder,
     ContextTypes,
@@ -27,13 +27,14 @@ def escape_ansi(line):
 
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    assert isinstance(update.message, Message)
     entities = update.message.entities or update.message.caption_entities or []
     text = update.message.text or update.message.caption or ""
     char_list = list(text)
     has_error = False
     for entity in entities:
         try:
-            if entity.type == entity.TEXT_LINK:
+            if entity.type == entity.TEXT_LINK and type(entity.url) == str:
                 await pickup(entity.url)
             if entity.type == entity.URL:
                 url = "".join(char_list[entity.offset : entity.offset + entity.length])
