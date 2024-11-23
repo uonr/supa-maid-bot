@@ -14,6 +14,7 @@ from .utils import is2XX
 booru_username = os.environ["BOORU_USERNAME"]
 booru_token = os.environ["BOORU_TOKEN"]
 booru_api_url = os.environ.get("BOORU_API_URL", "https://moe.yuru.me/api")
+pixiv_refresh_token = os.environ.get("PIXIV_REFRESH_TOKEN", None)
 
 tmp = pathlib.Path(tempfile.mkdtemp())
 
@@ -50,7 +51,17 @@ async def upload_to_booru(download_path: pathlib.Path, source: str):
 
 
 async def gallery_get(download_path: str, url: str):
-    cmd = " ".join(["gallery-dl", "--directory", download_path, url])
+    cmd = " ".join(
+        [
+            "gallery-dl",
+            "--quiet",
+            "--cookies-from-browser",
+            "firefox",
+            "--directory",
+            download_path,
+            url,
+        ]
+    )
     print(cmd)
     proc = await asyncio.create_subprocess_shell(
         cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
@@ -63,7 +74,11 @@ async def gallery_get(download_path: str, url: str):
 
 
 async def pickup(url: str):
-    url = url.replace("fxtwitter.", "twitter.").replace("vxtwitter.", "twitter.").replace("fixupx.", "x.")
+    url = (
+        url.replace("fxtwitter.", "twitter.")
+        .replace("vxtwitter.", "twitter.")
+        .replace("fixupx.", "x.")
+    )
     download_path = tmp.joinpath(str(uuid.uuid4()))
     download_path.mkdir(parents=True, exist_ok=True)
     try:
