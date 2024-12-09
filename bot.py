@@ -26,6 +26,9 @@ def escape_ansi(line):
     return ansi_escape.sub("", line)
 
 
+async def downloading_message(update_message: Message) -> Message:
+    return await update_message.reply_text("正在下载~！")
+
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     assert isinstance(update.message, Message)
     entities = update.message.entities or update.message.caption_entities or []
@@ -33,21 +36,23 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     char_list = list(text)
     has_error = False
     for entity in entities:
+        reply = await downloading_message(update.message)
         try:
             if entity.type == entity.TEXT_LINK and type(entity.url) == str:
-                await pickup(entity.url)
+                await pickup(reply, entity.url)
             if entity.type == entity.URL:
                 url = "".join(char_list[entity.offset : entity.offset + entity.length])
                 if url.startswith("https://t.me"):
                     continue
-                await pickup(url.strip())
+                await pickup(reply, url.strip())
+            await reply.delete()
         except RuntimeError as e:
             has_error = True
             logging.warn(e)
-            await update.message.reply_text(
+            await reply.edit_text(
                 escape_ansi(str(e)),
                 disable_web_page_preview=True,
-                reply_to_message_id=update.message.id,
+                parse_mode="Markdown",
             )
     if not has_error:
         await update.message.delete()
