@@ -10,21 +10,43 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        python = pkgs.python3.withPackages (p:
-          with p; [
-            python-telegram-bot
-            python-dotenv
-            black
-            tweepy
-            httpx
-          ]);
-      in  {
+
+        pythonPackages = ps: with ps; ([
+          setuptools
+          python-telegram-bot
+          python-dotenv
+          black
+          tweepy
+          httpx
+        ] ++ python-telegram-bot.optional-dependencies.job-queue);
+
+        bot = pkgs.python3Packages.buildPythonApplication {
+          pname = "supa-maid-bot";
+          version = "0.1.0";
+          src = ./.;
+          propagatedBuildInputs = pythonPackages pkgs.python3.pkgs;
+          nativeBuildInputs = [ pkgs.pkg-config ];
+          PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
+        };
+      in {
+        packages.default = bot;
+
+        apps.default = {
+          type = "app";
+          program = "${bot}/bin/supa-maid-bot";
+        };
+
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [ python you-get yt-dlp gallery-dl ];
+          buildInputs = [
+            (pkgs.python3.withPackages pythonPackages)
+            pkgs.you-get
+            pkgs.yt-dlp
+            pkgs.gallery-dl
+          ];
           nativeBuildInputs = [ pkgs.pkg-config ];
           PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
           shellHook = ''
-            PYTHONPATH=${python}/${python.sitePackages}
+            export PYTHONPATH=${pkgs.python3}/${pkgs.python3.sitePackages}
           '';
         };
       });

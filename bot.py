@@ -63,8 +63,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await context.bot.send_message(chat_id=chat.id, text="started")
 
-
-if __name__ == "__main__":
+def main():
     application = ApplicationBuilder().token(os.environ["TELEGRAM_BOT_TOKEN"]).build()
 
     start_handler = CommandHandler("start", start)
@@ -78,3 +77,6 @@ if __name__ == "__main__":
     application.add_handler(start_handler)
 
     application.run_polling()
+
+if __name__ == "__main__":
+    main()
