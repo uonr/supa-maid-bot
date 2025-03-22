@@ -105,7 +105,7 @@ async def lanraragi(reply: Message, url: str):
             )
             response_data = response.json()
             logging.info(response_data)
-            text = f"Downloading... `{job_id}` \n```\n{response_data}\n```"
+            text = f"Downloading... {url} `{job_id}`"
             try:
                 if text != prev_text:
                     await reply.edit_text(text, parse_mode="Markdown")
@@ -119,17 +119,14 @@ async def lanraragi(reply: Message, url: str):
                 success = result.get("success", 0)
                 message = result.get("message", "")
                 if message == "URL already downloaded!":
-                    await reply.edit_text(
-                        f"已经下载过了喵"
-                    )
                     return
-                elif success != 1:
-                    raise PickupError(f"下载失败了喵", result)
-                return
+                elif success == 1:
+                    return
             elif state == "active":
                 await asyncio.sleep(5)
-            else:
-                raise PickupError(f"下载出问题了喵", response.content)
+                continue
+            target = reply.reply_to_message or reply
+            await target.reply_text(f"下载失败了喵 {url}\n\n```\n{result}\n```")
 
 
 async def pickup(reply: Message, url: str):
