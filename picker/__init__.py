@@ -1,1 +1,1 @@
-from .pickup import pickup
+from .pickup import pickup, PickupError

@@ -13,7 +13,7 @@ import re
 from dotenv import load_dotenv
 
 load_dotenv()
-from picker import pickup
+from picker import pickup, PickupError
 
 
 logging.basicConfig(
@@ -27,7 +27,7 @@ def escape_ansi(line):
 
 
 async def downloading_message(update_message: Message) -> Message:
-    return await update_message.reply_text("正在下载~！")
+    return await update_message.reply_text("正在下载...")
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     assert isinstance(update.message, Message)
@@ -46,9 +46,8 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     continue
                 await pickup(reply, url.strip())
             await reply.delete()
-        except RuntimeError as e:
+        except PickupError as e:
             has_error = True
-            logging.warn(e)
             await reply.edit_text(
                 escape_ansi(str(e)),
                 disable_web_page_preview=True,
