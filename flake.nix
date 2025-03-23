@@ -16,7 +16,6 @@
           python-telegram-bot
           python-dotenv
           black
-          tweepy
           httpx
         ] ++ python-telegram-bot.optional-dependencies.job-queue);
 
@@ -24,7 +23,8 @@
           pname = "supa-maid-bot";
           version = "0.1.0";
           src = ./.;
-          propagatedBuildInputs = pythonPackages pkgs.python3.pkgs;
+          buildInputs = [ pkgs.gallery-dl ];
+          propagatedBuildInputs = (pythonPackages pkgs.python3.pkgs) ++ [ pkgs.gallery-dl];
           nativeBuildInputs = [ pkgs.pkg-config ];
           PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
         };
