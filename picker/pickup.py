@@ -20,10 +20,12 @@ lanraragi_token = os.environ["LANRARAGI_TOKEN"]
 booru_api_url = os.environ.get("BOORU_API_URL", "https://moe.yuru.me/api")
 pixiv_refresh_token = os.environ.get("PIXIV_REFRESH_TOKEN", None)
 
+
 class PickupError(Exception):
     def __init__(self, message, detail=None):
         super().__init__(message)
         self.detail = detail
+
 
 tmp = pathlib.Path(tempfile.mkdtemp())
 
@@ -55,11 +57,12 @@ async def upload_to_booru(download_path: pathlib.Path, source: str):
                 logging.info(f"Upload {source} successfully")
             else:
                 raise PickupError(
-                    f"Failed to upload to booru. [{response.status_code}]", response.content
+                    f"Failed to upload to booru. [{response.status_code}]",
+                    response.content,
                 )
 
 
-async def gallery_get(download_path: str, url: str):
+async def gallery_get(download_path: str, url: str, reply: Message):
     cmd = " ".join(
         [
             "gallery-dl",
@@ -78,7 +81,11 @@ async def gallery_get(download_path: str, url: str):
     if stdout:
         logging.info(stdout.decode())
     if stderr:
-        raise PickupError("Failed to download from gallery-dl", stderr.decode())
+        target = reply.reply_to_message or reply
+        await target.reply_text(
+            "Failed to download from gallery-dl\n\n```\n" + stderr.decode() + "\n```",
+            parse_mode="markdown",
+        )
 
 
 async def lanraragi(reply: Message, url: str):
@@ -142,7 +149,7 @@ async def pickup(reply: Message, url: str):
     download_path = tmp.joinpath(str(uuid.uuid4()))
     download_path.mkdir(parents=True, exist_ok=True)
     try:
-        await gallery_get(str(download_path), url)
+        await gallery_get(str(download_path), url, reply)
         await upload_to_booru(download_path, url)
     finally:
         shutil.rmtree(download_path)
