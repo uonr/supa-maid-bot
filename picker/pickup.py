@@ -10,8 +10,7 @@ import json
 import shutil
 import tempfile
 import base64
-from telegram import Update, Message
-from .utils import is2XX
+from telegram import Message
 
 booru_username = os.environ["BOORU_USERNAME"]
 booru_token = os.environ["BOORU_TOKEN"]
@@ -148,7 +147,7 @@ async def lanraragi(reply: Message, url: str):
                 continue
             target = reply.reply_to_message or reply
             await target.reply_text(f"下载失败了喵 {url}\n\n```\n{result}\n```")
-
+            raise PickupError(f"Failed to download to lanraragi", response.content)
 
 async def pickup(reply: Message, url: str):
     url = (
