@@ -30,7 +30,7 @@ class PickupError(Exception):
 tmp = pathlib.Path(tempfile.mkdtemp())
 
 
-async def upload_to_booru(download_path: pathlib.Path, source: str):
+async def upload_to_booru(download_path: pathlib.Path, source: str, reply: Message):
     token = f"{booru_username}:{booru_token}"
     headers = {
         "Authorization": f"Token {base64.b64encode(token.encode()).decode()}",
@@ -53,9 +53,17 @@ async def upload_to_booru(download_path: pathlib.Path, source: str):
                     "content": open(file, "rb"),
                 },
             )
-            if is2XX(response.status_code):
+            if response.is_success:
                 logging.info(f"Upload {source} successfully")
             else:
+                target = reply.reply_to_message or reply
+                error = response.json()
+                if error.get("name", "") == "PostAlreadyUploadedError":
+                    return
+                await target.reply_text(
+                    f"上传到 booru 失败了喵\n\n```\n{error}\n```",
+                    parse_mode="Markdown",
+                )
                 raise PickupError(
                     f"Failed to upload to booru. [{response.status_code}]",
                     response.content,
@@ -86,6 +94,7 @@ async def gallery_get(download_path: str, url: str, reply: Message):
             "Failed to download from gallery-dl\n\n```\n" + stderr.decode() + "\n```",
             parse_mode="markdown",
         )
+        raise PickupError("Failed to download from gallery-dl")
 
 
 async def lanraragi(reply: Message, url: str):
@@ -98,8 +107,13 @@ async def lanraragi(reply: Message, url: str):
     async with httpx.AsyncClient() as client:
         response = await client.post(api_url, headers=headers)
         if response.status_code != 200:
+            target = reply.reply_to_message or reply
+            await target.reply_text(
+                f"Failed to download from lanraragi. [{response.status_code}]",
+            )
             raise PickupError(
-                f"Failed to download from lanraragi. [{response.status_code}] {response.content}"
+                f"Failed to download from lanraragi. [{response.status_code}]",
+                response.content,
             )
         response_data = response.json()
         assert type(response_data) == dict
@@ -150,6 +164,6 @@ async def pickup(reply: Message, url: str):
     download_path.mkdir(parents=True, exist_ok=True)
     try:
         await gallery_get(str(download_path), url, reply)
-        await upload_to_booru(download_path, url)
+        await upload_to_booru(download_path, url, reply)
     finally:
         shutil.rmtree(download_path)

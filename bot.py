@@ -46,13 +46,8 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     continue
                 await pickup(reply, url.strip())
             await reply.delete()
-        except PickupError as e:
+        except PickupError:
             has_error = True
-            await reply.edit_text(
-                escape_ansi(str(e)),
-                disable_web_page_preview=True,
-                parse_mode="Markdown",
-            )
     if not has_error:
         await update.message.delete()
 
